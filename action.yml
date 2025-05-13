@@ -1,0 +1,30 @@
+name: 'Network Reputation Check'
+description: 'Check IP/domain/CIDR reputation using threat intel sources like VirusTotal and URLScan.'
+author: 'Isaiah Genis'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  target:
+    description: 'Target IP, domain, or CIDR to check.'
+    required: true
+  source:
+    description: 'Source to use for reputation check (virustotal, urlscan).'
+    required: true
+  api-key:
+    description: 'API key for the selected source (if required).'
+    required: false
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    GITHUB_STEP_SUMMARY: ${{ env.GITHUB_STEP_SUMMARY }}
+    GITHUB_WORKSPACE: ${{ env.GITHUB_WORKSPACE }}
+  args:
+    - ${{ inputs.target }}
+    - --source
+    - ${{ inputs.source }}
+    - ${{ inputs.api-key && '--api-key' }}
+    - ${{ inputs.api-key }}

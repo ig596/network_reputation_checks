@@ -1,0 +1,27 @@
+
+name: Test Network Reputation Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target IP or domain'
+        required: true
+      source:
+        description: 'Source to use (virustotal, cloudflare, urlscan)'
+        required: true
+      api-key:
+        description: 'API key for source'
+        required: false
+
+jobs:
+  reputation-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Action
+        uses: ./
+        with:
+          target: ${{ github.event.inputs.target }}
+          source: ${{ github.event.inputs.source }}
+          api-key: ${{ github.event.inputs.api-key }}

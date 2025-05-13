@@ -1,0 +1,57 @@
+[project]
+name = "network-reputation-check"
+version = "0.1.0"
+description = "Perform IP and domain threat intelligence lookups using services like VirusTotal and URLScan. Each source runs as an isolated check, enabling flexible, actionable insight into suspicious indicators during your CI workflows."
+authors = [
+    {name = "Isaiah Genis",email = "isaiah@isaiahgenis.site"}
+]
+packages = [{ include = "network_reputation_check" }]
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+
+
+dependencies = [
+    "click (>=8.2.0,<9.0.0)",
+    "validators (>=0.35.0,<0.36.0)",
+    "requests (>=2.32.3,<3.0.0)",
+    "vt-py (>=0.20.0,<0.21.0)",
+    "tabulate (>=0.9.0,<0.10.0)"
+]
+[project.group.dev.dependencies]
+pre-commit = "^3.7.0"
+ruff = "^0.4.4"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+fix = true
+
+[too.ruff.format]
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "D203",     # 1 blank line before class docstring (conflicts with D211)
+  "D213",     # Multi-line docstring summary on second line (style preference)
+  "ANN101",   # Don't require self argument type annotation
+  "ANN102",   # Don't require cls argument type annotation
+  "S101", 
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=network_reputation_check --cov-report=term-missing --cov-branch"
+testpaths = ["tests"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+ruff = "^0.11.9"
+pre-commit = "^4.2.0"
+pytest-cov = "^6.1.1"
+
+[project.scripts]
+reputation-check = "network_reputation_check.main:cli"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
