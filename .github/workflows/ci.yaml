@@ -7,7 +7,12 @@ on:
   pull_request:
 
 permissions:
-  contents: write  # Grant write access for the test job
+  contents: write
+  checks: write
+  issues: write
+  pull-requests: write
+  statuses: write
+
 
 jobs:
   test:
@@ -29,7 +34,6 @@ jobs:
         run: |
           poetry run pytest --cov=network_reputation_check --cov-report=xml --cov-report=term
       - name: Generate and Commit Coverage Badge
-        if: github.ref == 'refs/heads/main'
         run: |
           poetry run genbadge coverage -i coverage.xml -o coverage.svg
           git config --global user.name "GitHub Actions"
@@ -72,6 +76,7 @@ jobs:
         env:
           VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: main
+
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   validate-docker:

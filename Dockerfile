@@ -9,7 +9,6 @@ USER appuser
 
 # Install poetry and dependencies as non-root user
 RUN pip install --no-cache-dir poetry \
-    && export PATH="$PATH:/home/appuser/.local/bin" \
-    && poetry install
+    && poetry install --no-dev
 
 ENTRYPOINT ["poetry", "run", "reputation-check"]

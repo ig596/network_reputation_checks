@@ -1,0 +1,62 @@
+name: Release Workflow
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+
+permissions:
+  contents: write  # Required for creating releases
+  issues: write
+  pull-requests: write
+  statuses: write
+  checks: write
+  id-token: write  # Required for generating build attestations
+
+concurrency:
+  group: release-workflow
+  cancel-in-progress: true
+
+jobs:
+  semantic-release:
+    if: ${{ github.ref == 'refs/heads/main' && github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Install Dependencies
+        run: |
+          pip install poetry
+          poetry install --with dev
+      - name: Python Semantic Release
+        uses: python-semantic-release/python-semantic-release@v10.0.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          changelog: true  # Generate changelog
+          vcs_release: true  # Create a release on GitHub
+          tag: true  # Tag the release
+          push: true  # Push changes back to the repository
+          commit: true  # Commit changes
+
+
+  sbom-generation:
+    needs: semantic-release  # Ensure this runs after the semantic-release job
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate SBOM
+        uses: anchore/sbom-action@0.20.0
+        with:
+          path: .  # Generate SBOM for the entire repository
+          artifact-name: sbom.spdx.json  # Name of the generated SBOM file
+          format: spdx-json  # Use SPDX format for SBOM
+          dependency-snapshot: true  # Include dependency snapshot
