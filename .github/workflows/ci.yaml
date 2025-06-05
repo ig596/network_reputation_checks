@@ -9,14 +9,11 @@ on:
 permissions:
   contents: write
   checks: write
-  issues: write
-  pull-requests: write
-  statuses: write
-
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -34,17 +31,16 @@ jobs:
         run: |
           poetry run pytest --cov=network_reputation_check --cov-report=xml --cov-report=term
       - name: Generate and Commit Coverage Badge
+        if: github.ref == 'refs/heads/main'
         run: |
           poetry run genbadge coverage -i coverage.xml -o coverage.svg
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add coverage.svg
-          git diff --cached --quiet || git commit -m "Update coverage badge [ci skip]"
+          git diff --cached --quiet || git commit -m "docs: Update coverage badge [ci skip]"
           git push || echo "No changes to push"
 
   lint:
-    permissions:
-      contents: read  # Restrict permissions to read-only
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,24 +56,40 @@ jobs:
           poetry install --with dev
       - name: Validate commit messages
         run: |
-          poetry run cz check  # Validate commit messages against conventional commits
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "Validating commits for push to main branch..."
+            git log --oneline HEAD~1..HEAD || echo "No commits found in range!"
+            poetry run cz check --rev-range HEAD~1..HEAD || echo "Commit validation failed!"
+          elif [ -n "${{ github.event.pull_request.base.sha }}" ] && [ -n "${{ github.event.pull_request.head.sha }}" ]; then
+            echo "Validating commits in pull request range..."
+            git log --oneline ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} || echo "No commits found in range!"
+            poetry run cz check --rev-range ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} || echo "Commit validation failed!"
+          else
+            echo "No valid commit range found!"
+          fi
       - name: Run pre-commit hooks
         run: |
           poetry run pre-commit run --all-files
-      - name: Commit changes made by hooks
+      - name: Commit changes made by pre-commit hooks
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Apply pre-commit fixes [ci skip]" || echo "No changes to commit"
+          git diff --cached --quiet || git commit -m "Apply pre-commit fixes [ci skip]"
           git push || echo "No changes to push"
+      - name: Handle pre-commit failures
+        if: failure()
+        run: echo "Pre-commit hooks modified files, but changes were committed successfully."
+
+  superlinter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Run Super-Linter
         uses: github/super-linter@v7
         env:
-          VALIDATE_ALL_CODEBASE: true
-          DEFAULT_BRANCH: main
-
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: true
 
   validate-docker:
     permissions:
