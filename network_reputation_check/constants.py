@@ -6,11 +6,13 @@ from enum import Enum
 # Enum: Supported Source Names
 # ------------------------------------------------------------------------------
 
+
 class Source(str, Enum):
     """Supported reputation check sources."""
 
     VIRUSTOTAL = "virustotal"
     URLSCAN = "urlscan"
+
 
 # ------------------------------------------------------------------------------
 # Defaults

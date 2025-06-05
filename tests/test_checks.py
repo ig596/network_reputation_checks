@@ -9,10 +9,13 @@ from network_reputation_check.checks.urlscan import URLScanCheck
 from network_reputation_check.checks.virus_total import VirusTotalCheck
 
 
-@pytest.mark.parametrize(("check_class", "api_key"), [
-    (VirusTotalCheck, "FAKE_VT_KEY"),
-    (URLScanCheck, "FAKE_URLSCAN_KEY"),
-])
+@pytest.mark.parametrize(
+    ("check_class", "api_key"),
+    [
+        (VirusTotalCheck, "FAKE_VT_KEY"),
+        (URLScanCheck, "FAKE_URLSCAN_KEY"),
+    ],
+)
 @patch("network_reputation_check.checks.virus_total.vt.Client")
 @patch("requests.get")
 def test_check_run(

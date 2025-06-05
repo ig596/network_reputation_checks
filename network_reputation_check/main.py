@@ -33,7 +33,7 @@ def in_github_actions() -> bool:
 logger = logging.getLogger(__name__)
 
 @click.command()
-@click.argument("target")
+@click.argument("target", required=True)
 @click.option(
     "--source",
     required=True,
@@ -58,16 +58,30 @@ def cli(target: str, source: str, api_key: str | None, output_file: Path | None)
       when running inside GitHub Actions.
     • Exits 1 if any malicious or suspicious detections are present.
     """
+    error_messages = {
+        "missing_target": "Error: Target is required.",
+        "missing_source": "Error: Source is required.",
+        "unsupported_source": lambda s, keys: f"Error: Unsupported source '{s}'. Supported sources: {', '.join(keys)}.",
+        "missing_api_key": "Error: VirusTotal requires an API key.",
+    }
+
+    if not target:
+        click.echo(error_messages["missing_target"], err=True)
+        raise click.BadParameter(error_messages["missing_target"])
+    if not source:
+        click.echo(error_messages["missing_source"], err=True)
+        raise click.BadParameter(error_messages["missing_source"])
+
     checks: dict[str, Any] = get_all_checks()
     if source not in checks:
-        logger.error(f"Unsupported source '{source}' provided.")
-        click.echo(f"Error: Unsupported source '{source}'. Supported sources: {', '.join(checks.keys())}.", err=True)
-        sys.exit(2)
+        unsupported_source_msg = error_messages["unsupported_source"](source, checks.keys())
+        click.echo(unsupported_source_msg, err=True)
+        raise click.BadParameter(unsupported_source_msg)
 
     if source == "virustotal" and not api_key:
-        logger.error("VirusTotal requires an API key.")
-        click.echo("Error: VirusTotal requires an API key.", err=True)
-        sys.exit(2)
+        logger.error(error_messages["missing_api_key"])
+        click.echo(error_messages["missing_api_key"], err=True)
+        sys.exit(1)
 
     check = checks[source]
     result: dict[str, Any] = check.run(target, api_key=api_key or "")
@@ -91,7 +105,7 @@ def cli(target: str, source: str, api_key: str | None, output_file: Path | None)
     suspicious: int = int(stats.get("suspicious", 0))
 
     if malicious > 0 or suspicious > 0:
-        click.echo("❌ Threats detected - failing job.")
+        click.echo("❌ Threats detected - failing job.", err=True)
         sys.exit(1)
 
     click.echo("✅ No threats detected.")

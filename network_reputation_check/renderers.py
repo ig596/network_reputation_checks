@@ -47,7 +47,7 @@ def render_virustotal_terminal(result: dict[str, Any]) -> str:
 
     lines = [
         "🛡️  VirusTotal Reputation Report",
-        f"{'-'*40}",
+        f"{'-' * 40}",
         f"Target            : {result.get('target')}",
         f"Type              : {result.get('type')}",
         f"Last Analyzed     : {format_timestamp(result.get('last_analysis_date'))}",
@@ -98,9 +98,7 @@ def render_virustotal_markdown(result: dict[str, Any]) -> str:
         md.append("| Engine | Category | Result |")
         md.append("|--------|----------|--------|")
         md.extend(
-            f"| {d['engine']} | {d['category']} | {d['result']} |"
-            for d in detections
-            if d["category"] == "malicious"
+            f"| {d['engine']} | {d['category']} | {d['result']} |" for d in detections if d["category"] == "malicious"
         )
     else:
         md.append("\n_No malicious detections found._")

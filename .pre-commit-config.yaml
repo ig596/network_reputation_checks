@@ -28,3 +28,12 @@ repos:
     hooks:
       - id: osv-scanner
         args: ["-r", "."]
+
+
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.8.2
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+      - id: commitizen-branch
+        stages: [pre-push]

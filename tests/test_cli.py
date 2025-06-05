@@ -34,7 +34,7 @@ from network_reputation_check.main import cli
             None,
             {
                 "mock_response": {"error": "Missing VirusTotal API key"},
-                "expected_output": "Error: Missing VirusTotal API key",
+                "expected_output": "Error: VirusTotal requires an API key.",
                 "expected_exit_code": 1,
             },
         ),
