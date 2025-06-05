@@ -4,6 +4,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.11-blue)
 ![License](https://img.shields.io/github/license/ig596/network-reputation-check-action)
 ![Poetry](https://img.shields.io/badge/managed%20with-poetry-blue)
+![Coverage](https://img.shields.io/codecov/c/github/ig596/network-reputation-check-action?branch=main)
 
 A GitHub Action and CLI tool to check the reputation of IPs, domains, or CIDR blocks using threat intelligence sources like VirusTotal and urlscan.io.
 
@@ -46,8 +47,25 @@ poetry run reputation-check <target> --source <source> [--api-key YOUR_KEY] [--o
 - urlscan.io
 
 ## 🔑 API Keys
-- VirusTotal: `VT_API_KEY`
-- urlscan.io: `URLSCAN_API_KEY`
+- VirusTotal: `VT_API_KEY` (required)
+- urlscan.io: `URLSCAN_API_KEY` (optional for most API calls)
+
+## 🔧 Development Setup
+
+### Pre-commit Hooks
+
+This project uses pre-commit hooks to enforce code quality. Install and activate them with:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+You can manually run the hooks on all files with:
+
+```bash
+pre-commit run --all-files
+```
 
 ## 📜 License
 

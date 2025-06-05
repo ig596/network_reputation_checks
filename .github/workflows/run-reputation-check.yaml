@@ -1,4 +1,3 @@
-
 name: Test Network Reputation Check
 
 on:
@@ -8,17 +7,17 @@ on:
         description: 'Target IP or domain'
         required: true
       source:
-        description: 'Source to use (virustotal, cloudflare, urlscan)'
+        description: 'Source to use (virustotal, urlscan)'
         required: true
       api-key:
-        description: 'API key for source'
+        description: 'API key for source (required for VirusTotal, optional for urlscan.io)'
         required: false
 
 jobs:
   reputation-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Run Action
         uses: ./
         with:

@@ -26,7 +26,7 @@ target-version = "py311"
 line-length = 120
 fix = true
 
-[too.ruff.format]
+[tool.ruff.format]
 line-ending = "auto"
 
 [tool.ruff.lint]
@@ -36,7 +36,8 @@ ignore = [
   "D213",     # Multi-line docstring summary on second line (style preference)
   "ANN101",   # Don't require self argument type annotation
   "ANN102",   # Don't require cls argument type annotation
-  "S101", 
+  "S101",
+  "G004",   # Allow f-string logging
 ]
 
 [tool.pytest.ini_options]

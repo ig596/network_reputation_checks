@@ -1,6 +1,7 @@
 """Utility functions for validating IPs, CIDR blocks, and domains."""
 
 import ipaddress
+import logging
 import re
 
 import validators
@@ -11,6 +12,8 @@ INTERNAL_DOMAIN_REGEX: re.Pattern[str] = re.compile(
     r"(?:\.(?!-)[A-Za-z0-9-]{1,63}(?<!-))*"
     r"\.[A-Za-z0-9]{2,}$",
 )
+
+logger = logging.getLogger(__name__)
 
 
 def is_ip(value: str) -> bool:
@@ -28,6 +31,7 @@ def is_ip(value: str) -> bool:
     try:
         ipaddress.ip_address(value)
     except ValueError:
+        logger.debug(f"Invalid IP address: {value}")
         return False
     else:
         return True
@@ -48,6 +52,7 @@ def is_cidr(value: str) -> bool:
     try:
         ipaddress.ip_network(value, strict=False)
     except ValueError:
+        logger.debug(f"Invalid CIDR block: {value}")
         return False
     else:
         return True
@@ -74,5 +79,8 @@ def is_domain(value: str, *, allow_internal: bool = True) -> bool:
 
     if validators.domain(value):
         return True
+
+    if not (allow_internal and INTERNAL_DOMAIN_REGEX.fullmatch(value)):
+        logger.debug(f"Invalid domain: {value}")
 
     return bool(allow_internal and INTERNAL_DOMAIN_REGEX.fullmatch(value))

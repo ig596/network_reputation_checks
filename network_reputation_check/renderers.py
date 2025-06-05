@@ -4,10 +4,13 @@ This module provides functions to render results in terminal-friendly and Markdo
 for different reputation check sources like VirusTotal and urlscan.io.
 """
 
+import logging
 from datetime import datetime
 from typing import Any
 
 from tabulate import tabulate
+
+logger = logging.getLogger(__name__)
 
 
 def format_timestamp(ts: int | None) -> str:
@@ -143,6 +146,7 @@ def render_terminal(result: dict[str, Any], source: str) -> str:
         results = result.get("results", [])
         return f"URLScan Report:\n  Found {len(results)} results for the target.\n"
 
+    logger.warning(f"Unknown source '{source}' encountered in render_terminal.")
     return f"Unknown source '{source}'. No rendering available."
 
 
@@ -169,4 +173,6 @@ def render_markdown(result: dict[str, Any], source: str) -> str:
     if source == "urlscan":
         results = result.get("results", [])
         return f"### URLScan Report\n- Found **{len(results)}** results for the target.\n"
+
+    logger.warning(f"Unknown source '{source}' encountered in render_markdown.")
     return f"### Unknown Source\nNo rendering available for source '{source}'."

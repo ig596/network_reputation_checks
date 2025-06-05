@@ -27,4 +27,4 @@ runs:
     - --source
     - ${{ inputs.source }}
     - ${{ inputs.api-key && '--api-key' }}
-    - ${{ inputs.api-key }}
+    - ${{ inputs.api-key || '' }}

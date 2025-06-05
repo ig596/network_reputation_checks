@@ -6,6 +6,7 @@ CLI entry-point for the network-reputation-check tool.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -29,6 +30,8 @@ def in_github_actions() -> bool:
 # --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
+logger = logging.getLogger(__name__)
+
 @click.command()
 @click.argument("target")
 @click.option(
@@ -39,7 +42,7 @@ def in_github_actions() -> bool:
 @click.option(
     "--api-key",
     envvar="API_KEY",
-    help="API key for the selected source (or set API_KEY env).",
+    help="API key for the selected source (required for VirusTotal, optional for urlscan.io).",
     required=False,
 )
 @click.option(
@@ -57,13 +60,20 @@ def cli(target: str, source: str, api_key: str | None, output_file: Path | None)
     """
     checks: dict[str, Any] = get_all_checks()
     if source not in checks:
+        logger.error(f"Unsupported source '{source}' provided.")
         click.echo(f"Error: Unsupported source '{source}'. Supported sources: {', '.join(checks.keys())}.", err=True)
+        sys.exit(2)
+
+    if source == "virustotal" and not api_key:
+        logger.error("VirusTotal requires an API key.")
+        click.echo("Error: VirusTotal requires an API key.", err=True)
         sys.exit(2)
 
     check = checks[source]
     result: dict[str, Any] = check.run(target, api_key=api_key or "")
 
     if "error" in result:
+        logger.error(f"Error encountered: {result['error']}")
         click.echo(f"Error: {result['error']}", err=True)
         sys.exit(1)
 

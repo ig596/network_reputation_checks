@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry config virtualenvs.create true  # Ensure Poetry creates a virtual environment
+          poetry config virtualenvs.in-project true  # Place the virtual environment inside the project directory
+          poetry install --with dev  # Install dependencies
+          source .venv/bin/activate  # Explicitly activate the virtual environment
+      - name: Activate virtual environment
+        run: |
+          source $(poetry env info --path)/bin/activate
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=network_reputation_check --cov-report=term --cov-report=xml > coverage.txt
+      - name: Extract coverage percentage
+        run: |
+          COVERAGE=$(grep -oP 'TOTAL.*?\K\d+(?=%)' coverage.txt || echo "0")
+          echo "coverage=$COVERAGE" >> $GITHUB_ENV
+      - name: Output coverage percentage
+        run: |
+          echo "Coverage: ${{ env.coverage }}%"
+
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry config virtualenvs.create true  # Ensure Poetry creates a virtual environment
+          poetry config virtualenvs.in-project true  # Place the virtual environment inside the project directory
+          poetry install --with dev  # Install dependencies
+          source .venv/bin/activate  # Explicitly activate the virtual environment
+      - name: Activate virtual environment
+        run: |
+          source $(poetry env info --path)/bin/activate
+      - name: Run pre-commit hooks
+        run: |
+          poetry run pre-commit run --all-files
+      - name: Commit changes made by hooks
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Apply pre-commit fixes [ci skip]" || echo "No changes to commit"
+          git push || echo "No changes to push"
+      - name: Run Super-Linter
+        uses: github/super-linter@v7
+        env:
+          VALIDATE_ALL_CODEBASE: true
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  validate-docker:
+    runs-on: ubuntu-latest
+    if: ${{! always() }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate build configuration
+        uses: docker/build-push-action@v6
+        with:
+          call: check

@@ -1,20 +1,30 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4
+    rev: v0.11.12
     hooks:
       - id: ruff
         args: ["--fix"]
-  
-  # - repo: https://github.com/awslabs/automated-security-helper
-  #   rev: v2.0.1        # ← pin the latest release tag
-  #   hooks:
-  #     - id: ash
-  #       name: ash-security-scan
-  #       manual: true  # Disable by default; run manually when needed
-  #       args:
-  #         # Fail the commit only on high/critical issues; report others
-  #         - "--severity-threshold"
-  #         - "high"
-  #       # Run on all added/modified files by default
-  #       types: [python]
-  #       pass_filenames: true
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0  # Use a stable version
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: pretty-format-json
+        args: ["--autofix"]
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-symlinks
+      - id: debug-statements
+      - id: requirements-txt-fixer
+
+  - repo: https://github.com/google/osv-scanner/
+    rev: v2.0.2
+    hooks:
+      - id: osv-scanner
+        args: ["-r", "."]

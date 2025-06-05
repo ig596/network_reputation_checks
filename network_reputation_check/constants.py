@@ -23,9 +23,9 @@ DEFAULT_OUTPUT_FILE = "results.json"
 # API Endpoints
 # ------------------------------------------------------------------------------
 
-# VirusTotal
+# VirusTotal API endpoints for domain and IP reputation checks
 VT_DOMAIN_URL = "https://www.virustotal.com/api/v3/domains/{}"
 VT_IP_URL = "https://www.virustotal.com/api/v3/ip_addresses/{}"
 
-# urlscan.io
+# urlscan.io API endpoint for domain reputation checks
 URLSCAN_URL = "https://urlscan.io/api/v1/search/?q=domain:{}"
