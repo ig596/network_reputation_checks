@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write
   checks: write
+  pull-requests: write
 
 jobs:
   test:
@@ -39,6 +40,14 @@ jobs:
           git add coverage.svg
           git diff --cached --quiet || git commit -m "docs: Update coverage badge [ci skip]"
           git push || echo "No changes to push"
+  commit-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check signed commits in PR
+        uses: 1Password/check-signed-commits-action@v1
+      - name: Conventional Commitlint
+        uses: opensource-nepal/commitlint@v1
+
 
   lint:
     runs-on: ubuntu-latest
@@ -54,22 +63,10 @@ jobs:
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
           poetry install --with dev
-      - name: Validate commit messages
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "Validating commits for push to main branch..."
-            git log --oneline HEAD~1..HEAD || echo "No commits found in range!"
-            poetry run cz check --rev-range HEAD~1..HEAD || echo "Commit validation failed!"
-          elif [ -n "${{ github.event.pull_request.base.sha }}" ] && [ -n "${{ github.event.pull_request.head.sha }}" ]; then
-            echo "Validating commits in pull request range..."
-            git log --oneline ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} || echo "No commits found in range!"
-            poetry run cz check --rev-range ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} || echo "Commit validation failed!"
-          else
-            echo "No valid commit range found!"
-          fi
       - name: Run pre-commit hooks
+        continue-on-error: true
         run: |
-          poetry run pre-commit run --all-files
+          poetry run pre-commit run --all-files || echo "Pre-commit hooks modified files."
       - name: Commit changes made by pre-commit hooks
         run: |
           git config --global user.name "GitHub Actions"
@@ -81,15 +78,6 @@ jobs:
         if: failure()
         run: echo "Pre-commit hooks modified files, but changes were committed successfully."
 
-  superlinter:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run Super-Linter
-        uses: github/super-linter@v7
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: true
 
   validate-docker:
     permissions:

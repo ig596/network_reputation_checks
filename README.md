@@ -4,6 +4,8 @@
 ![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
 ![License](https://img.shields.io/github/license/ig596/network_reputation_checks)
 ![Poetry](https://img.shields.io/badge/managed%20with-poetry-blue)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+
 ![Coverage](./coverage.svg)
 ![Code Style](https://img.shields.io/badge/code%20style-ruff-blue)
 ![PyPI Version](https://img.shields.io/pypi/v/network_reputation_checks)
