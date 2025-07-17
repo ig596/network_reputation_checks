@@ -38,6 +38,7 @@ repos:
     hooks:
       - id: osv-scanner
         args: ["-r", "."]
+        stages: [pre-push]
 
 
   - repo: https://github.com/commitizen-tools/commitizen
