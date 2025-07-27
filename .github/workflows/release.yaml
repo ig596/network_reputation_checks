@@ -1,11 +1,10 @@
 name: Release Workflow
 
 on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write  # Required for creating releases
@@ -21,7 +20,7 @@ concurrency:
 
 jobs:
   semantic-release:
-    if: ${{ github.ref == 'refs/heads/main' && github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,12 +50,36 @@ jobs:
     permissions:
       contents: write
       actions: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
       - name: Generate SBOM
-        uses: anchore/sbom-action@0.20.0
+        uses: anchore/sbom-action@v0
         with:
           path: .  # Generate SBOM for the entire repository
           artifact-name: sbom.spdx.json  # Name of the generated SBOM file
           format: spdx-json  # Use SPDX format for SBOM
           dependency-snapshot: true  # Include dependency snapshot
+
+  publish-testpypi:
+    needs: semantic-release
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install --with dev
+      - name: Build package
+        run: |
+          poetry build
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.TESTPYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
