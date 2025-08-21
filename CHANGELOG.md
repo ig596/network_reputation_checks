@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.2.2 (2025-08-21)
+
+### Bug Fixes
+
+- Optimize release workflow with efficient artifact management
+  ([`c86ee5a`](https://github.com/ig596/network_reputation_checks/commit/c86ee5a7484f09ef75e95c5c4138c02a515c9691))
+
+
 ## v0.2.1 (2025-08-21)
 
 ### Bug Fixes

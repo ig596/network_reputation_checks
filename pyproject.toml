@@ -1,6 +1,6 @@
 [project]
 name = "network-reputation-check"
-version = "0.2.1"
+version = "0.2.2"
 description = "Perform IP and domain threat intelligence lookups using services like VirusTotal and URLScan. Each source runs as an isolated check, enabling flexible, actionable insight into suspicious indicators during your CI workflows."
 authors = [
     {name = "Isaiah Genis",email = "isaiah@isaiahgenis.site"}
