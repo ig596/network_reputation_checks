@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.2.1 (2025-08-21)
+
+### Bug Fixes
+
+- Properly configure SBOM upload and semantic-release artifacts
+  ([`b514623`](https://github.com/ig596/network_reputation_checks/commit/b514623dba0c89370b6d870de54b90f4f5f27111))
+
+
 ## v0.2.0 (2025-08-21)
 
 ### Features
