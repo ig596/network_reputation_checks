@@ -71,3 +71,4 @@ Dockerfile.*
 # System files
 .DS_Store
 Thumbs.db
+.env.act
