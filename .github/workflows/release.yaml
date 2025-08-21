@@ -77,14 +77,9 @@ jobs:
           path: .  # Generate SBOM for the entire repository
           artifact-name: sbom.spdx.json  # Name of the generated SBOM file
           format: spdx-json  # Use SPDX format for SBOM
-          dependency-snapshot: true  # Include dependency snapshot
-      - name: Upload SBOM to GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          files: sbom.spdx.json
-          draft: false
-          prerelease: false
+          dependency-snapshot: true  # Include dependency snapshot (non-breaking warning)
+          upload-release-assets: true  # Automatically upload to GitHub release
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
     needs: semantic-release
@@ -124,6 +119,6 @@ jobs:
           POETRY_PYPI_TOKEN_TESTPYPI: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
           pip install poetry
-          poetry install --with dev
           poetry config repositories.testpypi https://test.pypi.org/legacy/
+          poetry build  # Build fresh since semantic-release built in different environment
           poetry publish --repository testpypi

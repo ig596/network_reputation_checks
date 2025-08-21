@@ -64,6 +64,8 @@ commit_message = "chore(release): {version} [skip ci]"
 commit_author = "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
 build_command = "pip install poetry && poetry build"
 upload_to_vcs_release = true
+upload_to_repository = true
+dist_glob_patterns = ["dist/*"]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
