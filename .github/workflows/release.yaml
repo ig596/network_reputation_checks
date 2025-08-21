@@ -7,118 +7,152 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # Required for creating releases
-  issues: write
-  pull-requests: write
-  statuses: write
-  checks: write
-  id-token: write  # Required for generating build attestations
-
-concurrency:
-  group: release-workflow
-  cancel-in-progress: true
+  contents: read
 
 jobs:
-  semantic-release:
-    if: ${{ github.ref == 'refs/heads/main' }}
+  release:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-release-${{ github.ref_name }}
+      cancel-in-progress: false
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Setup | Checkout Repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Python
+
+      - name: Setup | Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
-      - name: Install Dependencies
+
+      - name: Setup | Install Dependencies
         run: |
           pip install poetry
           poetry install --with dev
-      - name: Configure Git for semantic-release
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global commit.gpgsign false  # Disable signing for automated commits
-      - name: Python Semantic Release
+
+      - name: Action | Semantic Version Release
+        id: release
         uses: python-semantic-release/python-semantic-release@v10.0.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          changelog: true  # Generate changelog
-          vcs_release: true  # Create a release on GitHub
-          tag: true  # Tag the release
-          push: true  # Push changes back to the repository
-          commit: true  # Commit changes
+          git_committer_name: "github-actions[bot]"
+          git_committer_email: "github-actions[bot]@users.noreply.github.com"
 
+      - name: Publish | Upload to GitHub Release Assets
+        uses: python-semantic-release/publish-action@v10.0.2
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.release.outputs.tag }}
+
+      - name: Publish to TestPyPI
+        if: steps.release.outputs.released == 'true'
+        env:
+          POETRY_PYPI_TOKEN_TESTPYPI: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          poetry config repositories.testpypi https://test.pypi.org/legacy/
+          poetry publish --repository testpypi
+
+      - name: Create convenience Git tags
+        if: steps.release.outputs.released == 'true'
+        run: |
+          # Extract version components for convenience tagging
+          VERSION=${{ steps.release.outputs.version }}
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+
+          # Create/update convenience tags to match Docker tagging strategy
+          git tag -f "v$MAJOR" ${{ steps.release.outputs.tag }}
+          git tag -f "v$MAJOR.$MINOR" ${{ steps.release.outputs.tag }}
+
+          # Push convenience tags
+          git push origin "v$MAJOR" --force
+          git push origin "v$MAJOR.$MINOR" --force
+
+          echo "Created convenience tags: v$MAJOR, v$MAJOR.$MINOR"
 
   sbom-generation:
-    needs: semantic-release  # Ensure this runs after the semantic-release job
-    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: release
+    if: needs.release.outputs.released == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       actions: read
       security-events: write
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref || github.ref_name }}
-      - name: Get version
-        id: version
-        run: |
-          # Get version from pyproject.toml after semantic-release updated it
-          VERSION=$(grep '^version =' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
+          ref: ${{ needs.release.outputs.tag }}
+
       - name: Generate SBOM
         uses: anchore/sbom-action@v0.17.6
         with:
-          path: .  # Generate SBOM for the entire repository
-          artifact-name: sbom.spdx.json  # Name of the generated SBOM file
-          format: spdx-json  # Use SPDX format for SBOM
-          dependency-snapshot: true  # Include dependency snapshot (non-breaking warning)
-          upload-release-assets: true  # Automatically upload to GitHub release
+          path: .
+          artifact-name: sbom.spdx.json
+          format: spdx-json
+          dependency-snapshot: true
+          upload-release-assets: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-  publish:
-    needs: semantic-release
-    if: ${{ github.ref == 'refs/heads/main' }}
+  docker-artifacts:
+    needs: release
+    if: needs.release.outputs.released == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref || github.ref_name }}
-      - name: Get version
-        id: version
-        run: |
-          # Get version from pyproject.toml after semantic-release updated it
-          VERSION=$(grep '^version =' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
+          ref: ${{ needs.release.outputs.tag }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build Docker image as tar
-        run: |
-          docker build -t network-reputation-check:v${{ steps.version.outputs.version }} .
-          docker save network-reputation-check:v${{ steps.version.outputs.version }} -o network-reputation-check-v${{ steps.version.outputs.version }}.tar
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: network-reputation-check
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.release.outputs.version }}
+            type=raw,value=latest
+          labels: |
+            org.opencontainers.image.title=Network Reputation Check Action
+            org.opencontainers.image.description=${{ github.event.repository.description }}
+
+      - name: Build Docker image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=docker,dest=network-reputation-check-${{ needs.release.outputs.version }}.tar
+
       - name: Upload Docker tar to GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          files: network-reputation-check-v${{ steps.version.outputs.version }}.tar
+          tag_name: ${{ needs.release.outputs.tag }}
+          files: network-reputation-check-${{ needs.release.outputs.version }}.tar
           draft: false
           prerelease: false
-      - name: Set up Python for TestPyPI publishing
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
-      - name: Install Poetry and publish to TestPyPI
-        env:
-          POETRY_PYPI_TOKEN_TESTPYPI: ${{ secrets.TEST_PYPI_API_TOKEN }}
-        run: |
-          pip install poetry
-          poetry config repositories.testpypi https://test.pypi.org/legacy/
-          poetry build  # Build fresh since semantic-release built in different environment
-          poetry publish --repository testpypi
