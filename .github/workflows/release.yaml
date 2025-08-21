@@ -49,7 +49,6 @@ jobs:
           tag: true  # Tag the release
           push: true  # Push changes back to the repository
           commit: true  # Commit changes
-          build: false  # Skip build in semantic-release since we'll do it separately
 
 
   sbom-generation:
@@ -62,13 +61,30 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+      - name: Get version
+        id: version
+        run: |
+          # Get version from pyproject.toml after semantic-release updated it
+          VERSION=$(grep '^version =' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
       - name: Generate SBOM
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@v0.17.6
         with:
           path: .  # Generate SBOM for the entire repository
           artifact-name: sbom.spdx.json  # Name of the generated SBOM file
           format: spdx-json  # Use SPDX format for SBOM
           dependency-snapshot: true  # Include dependency snapshot
+      - name: Upload SBOM to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          files: sbom.spdx.json
+          draft: false
+          prerelease: false
 
   publish:
     needs: semantic-release
@@ -79,20 +95,35 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref || github.ref_name }}
-      - name: Set up Python
+      - name: Get version
+        id: version
+        run: |
+          # Get version from pyproject.toml after semantic-release updated it
+          VERSION=$(grep '^version =' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image as tar
+        run: |
+          docker build -t network-reputation-check:v${{ steps.version.outputs.version }} .
+          docker save network-reputation-check:v${{ steps.version.outputs.version }} -o network-reputation-check-v${{ steps.version.outputs.version }}.tar
+      - name: Upload Docker tar to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          files: network-reputation-check-v${{ steps.version.outputs.version }}.tar
+          draft: false
+          prerelease: false
+      - name: Set up Python for TestPyPI publishing
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
-      - name: Install dependencies
-        run: |
-          pip install poetry
-          poetry install --with dev
-      - name: Build package
-        run: |
-          poetry build
-      - name: Publish to TestPyPI
+      - name: Install Poetry and publish to TestPyPI
         env:
           POETRY_PYPI_TOKEN_TESTPYPI: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
+          pip install poetry
+          poetry install --with dev
           poetry config repositories.testpypi https://test.pypi.org/legacy/
           poetry publish --repository testpypi
