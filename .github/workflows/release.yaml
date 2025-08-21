@@ -99,13 +99,23 @@ jobs:
           fetch-depth: 0
           ref: ${{ needs.release.outputs.tag }}
 
-      - name: Generate SBOM
-        uses: anchore/sbom-action@v0.17.6
+      - name: Generate SBOM (GitHub dependency submission)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          artifact-name: sbom.github.json
+          format: github-json
+          dependency-snapshot: true
+          upload-release-assets: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate SBOM (SPDX for release)
+        uses: anchore/sbom-action@v0
         with:
           path: .
           artifact-name: sbom.spdx.json
           format: spdx-json
-          dependency-snapshot: true
+          dependency-snapshot: false
           upload-release-assets: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -147,12 +157,12 @@ jobs:
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=docker,dest=network-reputation-check-${{ needs.release.outputs.version }}.tar
+          outputs: type=docker,dest=network-reputation-check-docker-${{ needs.release.outputs.version }}.tar.gz,compression=gzip
 
       - name: Upload Docker tar to GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.release.outputs.tag }}
-          files: network-reputation-check-${{ needs.release.outputs.version }}.tar
+          files: network-reputation-check-docker-${{ needs.release.outputs.version }}.tar.gz
           draft: false
           prerelease: false
