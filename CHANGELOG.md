@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.2.3 (2025-08-21)
+
+### Bug Fixes
+
+- Improve release workflow SBOM generation and Docker compression
+  ([`9c2633d`](https://github.com/ig596/network_reputation_checks/commit/9c2633dc24cf9033807ca4f8f8236d7480904f29))
+
+
 ## v0.2.2 (2025-08-21)
 
 ### Bug Fixes
