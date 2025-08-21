@@ -59,7 +59,11 @@ reputation-check = "network_reputation_check.main:cli"
 
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
-allow_zero_version=true
+allow_zero_version = true
+commit_message = "chore(release): {version} [skip ci]"
+commit_author = "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+build_command = "poetry build"
+upload_to_vcs_release = true
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

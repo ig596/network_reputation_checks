@@ -1,0 +1,6 @@
+# Git attributes for better repository handling
+# Mark auto-generated files so GitHub shows them as generated
+coverage.svg linguist-generated=true
+CHANGELOG.md linguist-generated=true
+# Mark Python bytecode as binary files
+*.pyc binary
