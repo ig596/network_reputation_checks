@@ -49,6 +49,7 @@ jobs:
           tag: true  # Tag the release
           push: true  # Push changes back to the repository
           commit: true  # Commit changes
+          build: false  # Skip build in semantic-release since we'll do it separately
 
 
   sbom-generation:
@@ -69,12 +70,15 @@ jobs:
           format: spdx-json  # Use SPDX format for SBOM
           dependency-snapshot: true  # Include dependency snapshot
 
-  publish-testpypi:
+  publish:
     needs: semantic-release
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -87,8 +91,8 @@ jobs:
         run: |
           poetry build
       - name: Publish to TestPyPI
-        continue-on-error: true  # Don't fail if secret is not set
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.TESTPYPI_API_TOKEN }}
-          repository-url: https://test.pypi.org/legacy/
+        env:
+          POETRY_PYPI_TOKEN_TESTPYPI: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          poetry config repositories.testpypi https://test.pypi.org/legacy/
+          poetry publish --repository testpypi
