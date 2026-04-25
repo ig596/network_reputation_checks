@@ -51,12 +51,49 @@ poetry run reputation-check <target> --source <source> [--api-key YOUR_KEY] [--o
 - `api-key` (optional): The API key for the selected source. Can be passed via GitHub Secrets.
 
 ## 📦 Supported Sources
-- VirusTotal
-- urlscan.io
+- `virustotal`
+  - Target types: domain, IPv4, IPv6
+  - API key: required
+- `urlscan`
+  - Target types: domain
+  - API key: required in this action implementation
+
+> Note: The tool intentionally runs **one source per invocation** for simplicity and predictable failure behavior.
+
+## 🔁 Running Multiple Sources (Recommended Matrix Pattern)
+
+If you want to run both sources for the same target, use a GitHub Actions matrix so each source runs in an isolated job.
+
+```yaml
+jobs:
+  reputation-check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        source: [virustotal, urlscan]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Network Reputation Check (${{ matrix.source }})
+        uses: ig596/network-reputation-check-action@main
+        with:
+          target: "example.com"
+          source: ${{ matrix.source }}
+          api-key: ${{ matrix.source == 'virustotal' && secrets.VT_API_KEY || secrets.URLSCAN_API_KEY }}
+```
+
+Why matrix is preferred:
+- Simpler and safer than chaining multiple lookups in one step.
+- Better observability (one check result per source).
+- Parallel execution improves CI time.
 
 ## 🔑 API Keys
 - VirusTotal: `VT_API_KEY` (required)
 - urlscan.io: `URLSCAN_API_KEY` (optional for most API calls)
+
+## 🏷️ Versioning & Releases
+
+Project version bumps are handled automatically by the release workflow using Conventional Commits and `python-semantic-release`. In normal PRs, do **not** manually edit `pyproject.toml` just to bump the version; the release job creates `chore(release): x.y.z [skip ci]` commits on `main` when appropriate.
 
 ## 🔧 Development Setup
 

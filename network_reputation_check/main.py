@@ -15,7 +15,8 @@ from typing import Any
 import click
 
 from network_reputation_check.checks import get_all_checks
-from network_reputation_check.gh_summary import write_summary
+from network_reputation_check.constants import DEFAULT_SOURCES
+from network_reputation_check.gh_summary import write_check_annotations, write_summary
 from network_reputation_check.renderers import render_markdown, render_terminal
 
 
@@ -61,7 +62,9 @@ def cli(target: str, source: str, api_key: str | None, output_file: Path | None)
     error_messages = {
         "missing_target": "Error: Target is required.",
         "missing_source": "Error: Source is required.",
-        "unsupported_source": lambda s, keys: f"Error: Unsupported source '{s}'. Supported sources: {', '.join(keys)}.",
+        "unsupported_source": (
+            lambda s: f"Error: Unsupported source '{s}'. Supported sources: {', '.join(DEFAULT_SOURCES)}."
+        ),
         "missing_api_key": "Error: VirusTotal requires an API key.",
     }
 
@@ -74,7 +77,7 @@ def cli(target: str, source: str, api_key: str | None, output_file: Path | None)
 
     checks: dict[str, Any] = get_all_checks()
     if source not in checks:
-        unsupported_source_msg = error_messages["unsupported_source"](source, checks.keys())
+        unsupported_source_msg = error_messages["unsupported_source"](source)
         click.echo(unsupported_source_msg, err=True)
         raise click.BadParameter(unsupported_source_msg)
 
@@ -99,6 +102,7 @@ def cli(target: str, source: str, api_key: str | None, output_file: Path | None)
 
     if in_github_actions() and os.getenv("GITHUB_STEP_SUMMARY"):
         write_summary(render_markdown(result, source))
+        write_check_annotations(result, source, target)
 
     stats: dict[str, int] = result.get("stats", {})
     malicious: int = int(stats.get("malicious", 0))

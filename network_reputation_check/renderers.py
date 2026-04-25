@@ -5,7 +5,7 @@ for different reputation check sources like VirusTotal and urlscan.io.
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from tabulate import tabulate
@@ -27,7 +27,7 @@ def format_timestamp(ts: int | None) -> str:
     """
     if not ts:
         return "N/A"
-    return datetime.fromtimestamp(ts, tz=datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    return datetime.fromtimestamp(ts, tz=UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 
 def render_virustotal_terminal(result: dict[str, Any]) -> str:
@@ -58,9 +58,10 @@ def render_virustotal_terminal(result: dict[str, Any]) -> str:
     for key, val in stats.items():
         lines.append(f"  {key.capitalize():<12}: {val}")
 
-    if detections:
+    malicious_detections = [d for d in detections if d.get("category") == "malicious"]
+    if malicious_detections:
         lines.append("\nDetected Engines:")
-        table = [[d["engine"], d["category"], d["result"]] for d in detections if d["category"] == "malicious"]
+        table = [[d["engine"], d["category"], d["result"]] for d in malicious_detections]
         lines.append(tabulate(table, headers=["Engine", "Category", "Result"]))
     else:
         lines.append("\nNo malicious detections found.")
@@ -93,13 +94,12 @@ def render_virustotal_markdown(result: dict[str, Any]) -> str:
     for key, val in stats.items():
         md.append(f"- **{key.capitalize()}**: {val}")
 
-    if detections:
+    malicious_detections = [d for d in detections if d.get("category") == "malicious"]
+    if malicious_detections:
         md.append("\n**Detected Engines:**\n")
         md.append("| Engine | Category | Result |")
         md.append("|--------|----------|--------|")
-        md.extend(
-            f"| {d['engine']} | {d['category']} | {d['result']} |" for d in detections if d["category"] == "malicious"
-        )
+        md.extend(f"| {d['engine']} | {d['category']} | {d['result']} |" for d in malicious_detections)
     else:
         md.append("\n_No malicious detections found._")
 
@@ -123,26 +123,31 @@ def render_terminal(result: dict[str, Any], source: str) -> str:
         return f"Error: {result['error']}"
 
     if source == "virustotal":
-        stats = result.get("stats", {})
-        malicious = stats.get("malicious", 0)
-        suspicious = stats.get("suspicious", 0)
-
-        lines = [
-            "VirusTotal Report:",
-            f"  Malicious: {malicious}",
-            f"  Suspicious: {suspicious}",
-        ]
-
-        if malicious > 0 or suspicious > 0:
-            lines.append("❌ Threats detected - failing job.")
-        else:
-            lines.append("✅ No threats detected.")
-
-        return "\n".join(lines)
+        return render_virustotal_terminal(result)
 
     if source == "urlscan":
         results = result.get("results", [])
-        return f"URLScan Report:\n  Found {len(results)} results for the target.\n"
+        lines = [
+            "🔎 URLScan Reputation Report",
+            f"{'-' * 40}",
+            f"Matches found : {len(results)}",
+        ]
+
+        top_hits = results[:5]
+        if top_hits:
+            lines.append("\nTop Matches:")
+            rows = [
+                [
+                    hit.get("task", {}).get("time", "N/A"),
+                    hit.get("task", {}).get("url", "N/A"),
+                    hit.get("page", {}).get("ip", "N/A"),
+                    hit.get("page", {}).get("status", "N/A"),
+                ]
+                for hit in top_hits
+            ]
+            lines.append(tabulate(rows, headers=["Scan Time", "URL", "Resolved IP", "HTTP Status"]))
+
+        return "\n".join(lines)
 
     logger.warning(f"Unknown source '{source}' encountered in render_terminal.")
     return f"Unknown source '{source}'. No rendering available."
@@ -162,15 +167,33 @@ def render_markdown(result: dict[str, Any], source: str) -> str:
 
     """
     if source == "virustotal":
-        stats = result.get("stats", {})
-        return (
-            f"### VirusTotal Report\n"
-            f"- **Malicious**: {stats.get('malicious', 0)}\n"
-            f"- **Suspicious**: {stats.get('suspicious', 0)}\n"
-        )
+        return render_virustotal_markdown(result)
+
     if source == "urlscan":
         results = result.get("results", [])
-        return f"### URLScan Report\n- Found **{len(results)}** results for the target.\n"
+        md = [
+            "### 🔎 URLScan Reputation Report",
+            f"- Found **{len(results)}** results for the target.",
+        ]
+        top_hits = results[:5]
+        if top_hits:
+            md.extend(
+                [
+                    "",
+                    "| Scan Time | URL | Resolved IP | HTTP Status |",
+                    "|---|---|---|---|",
+                ],
+            )
+            md.extend(
+                (
+                    f"| {hit.get('task', {}).get('time', 'N/A')} "
+                    f"| {hit.get('task', {}).get('url', 'N/A')} "
+                    f"| {hit.get('page', {}).get('ip', 'N/A')} "
+                    f"| {hit.get('page', {}).get('status', 'N/A')} |"
+                )
+                for hit in top_hits
+            )
+        return "\n".join(md) + "\n"
 
     logger.warning(f"Unknown source '{source}' encountered in render_markdown.")
     return f"### Unknown Source\nNo rendering available for source '{source}'."

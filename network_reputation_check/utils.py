@@ -80,7 +80,8 @@ def is_domain(value: str, *, allow_internal: bool = True) -> bool:
     if validators.domain(value):
         return True
 
-    if not (allow_internal and INTERNAL_DOMAIN_REGEX.fullmatch(value)):
+    is_internal_domain = bool(allow_internal and INTERNAL_DOMAIN_REGEX.fullmatch(value))
+    if not is_internal_domain:
         logger.debug(f"Invalid domain: {value}")
 
-    return bool(allow_internal and INTERNAL_DOMAIN_REGEX.fullmatch(value))
+    return is_internal_domain
