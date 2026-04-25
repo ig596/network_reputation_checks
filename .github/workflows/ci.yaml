@@ -4,9 +4,9 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
   checks: write
-  pull-requests: write
+  pull-requests: read
 
 jobs:
   commit-validation:
@@ -45,23 +45,16 @@ jobs:
           poetry config virtualenvs.in-project true
           poetry install --with dev
       - name: Run tests with coverage
-        continue-on-error: true
         run: |
           poetry run pytest --cov=network_reputation_check --cov-report=xml --cov-report=term
-      - name: Generate and commit coverage badge
-
+      - name: Generate coverage badge
         run: |
           poetry run genbadge coverage -i coverage.xml -o coverage.svg
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global commit.gpgsign false
-          git add coverage.svg
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: Update coverage badge [ci skip]" --author="github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-            git push
-          else
-            echo "No coverage changes to commit"
-          fi
+      - name: Upload coverage badge artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-badge
+          path: coverage.svg
 
   lint:
     runs-on: ubuntu-latest
@@ -83,20 +76,9 @@ jobs:
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
           poetry install --with dev
-      - name: Run pre-commit hooks and commit changes
-        continue-on-error: true
+      - name: Run pre-commit hooks
         run: |
-          poetry run pre-commit run --all-files || echo "Pre-commit hooks modified files."
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --global commit.gpgsign false  # Disable signing for automated commits
-          git add .
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: Apply pre-commit fixes [ci skip]" --author="github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-            git push
-          else
-            echo "No changes to commit"
-          fi
+          poetry run pre-commit run --all-files
 
 
   validate-docker:
