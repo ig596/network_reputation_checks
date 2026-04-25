@@ -1,11 +1,12 @@
 """Tests for the CLI of the network reputation check tool."""
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
 
-from network_reputation_check.main import cli
+from network_reputation_check.main import _escape_workflow_command_value, cli
 
 
 @pytest.mark.parametrize(
@@ -106,6 +107,49 @@ def test_cli_invalid_source() -> None:
 def test_cli_missing_target() -> None:
     """Test the CLI with a missing target argument."""
     runner = CliRunner()
-    result = runner.invoke(cli, ["--source", "virustotal"])
-    assert "Error: Missing argument 'TARGET'" in result.output
+    result = runner.invoke(cli, ["--source", "virustotal", "--api-key", "FAKE"])
+    assert "Error: Target is required unless --scan-path is provided." in result.output
     assert result.exit_code != 0
+
+
+@patch("network_reputation_check.checks.virus_total.VirusTotalCheck.run")
+def test_cli_scan_mode_writes_sarif(mock_run: MagicMock, tmp_path: Path) -> None:
+    """Test scan mode creates SARIF and succeeds for benign findings."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "sample.py").write_text("ip = '8.8.8.8'\n", encoding="utf-8")
+    sarif = tmp_path / "out.sarif"
+
+    mock_run.return_value = {"stats": {"malicious": 0, "suspicious": 0, "harmless": 1}}
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "--source",
+            "virustotal",
+            "--api-key",
+            "FAKE_VT_KEY",
+            "--scan-path",
+            str(repo),
+            "--sarif-file",
+            str(sarif),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert sarif.exists()
+
+
+def test_cli_rejects_target_with_control_chars() -> None:
+    """Test sanitization of user-provided target input."""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["bad\r\ntarget", "--source", "virustotal", "--api-key", "FAKE"])
+    assert "Target contains invalid control characters" in result.output
+    assert result.exit_code != 0
+
+
+def test_escape_workflow_command_value() -> None:
+    """Ensure workflow command values are escaped for safety."""
+    escaped = _escape_workflow_command_value("file%name\r\ntext")
+    assert escaped == "file%25name%0D%0Atext"

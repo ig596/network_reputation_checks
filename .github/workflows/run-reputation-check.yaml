@@ -4,14 +4,26 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: 'Target IP or domain'
-        required: true
+        description: 'Target IP/domain/CIDR (optional when scan-path is provided)'
+        required: false
       source:
         description: 'Source to use (virustotal, urlscan)'
         required: true
       api-key:
         description: 'API key for source (required for VirusTotal, optional for urlscan.io)'
         required: false
+      scan-path:
+        description: 'Optional repository path to recursively scan for indicators'
+        required: false
+        default: ''
+      sarif-file:
+        description: 'Optional SARIF output path to upload into Code Scanning'
+        required: false
+        default: 'network-reputation.sarif'
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
   reputation-check:
@@ -24,3 +36,10 @@ jobs:
           target: ${{ github.event.inputs.target }}
           source: ${{ github.event.inputs.source }}
           api-key: ${{ github.event.inputs.api-key }}
+          scan-path: ${{ github.event.inputs.scan-path }}
+          sarif-file: ${{ github.event.inputs.sarif-file }}
+      - name: Upload SARIF to Code Scanning
+        if: ${{ github.event.inputs.sarif-file != '' }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ github.event.inputs.sarif-file }}
