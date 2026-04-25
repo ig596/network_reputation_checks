@@ -7,13 +7,22 @@ branding:
 
 inputs:
   target:
-    description: 'Target IP, domain, or CIDR to check.'
-    required: true
+    description: 'Target IP, domain, or CIDR to check (optional when scan-path is provided).'
+    required: false
   source:
     description: 'Source to use for reputation check (virustotal, urlscan).'
     required: true
   api-key:
     description: 'API key for the selected source (if required).'
+    required: false
+  scan-path:
+    description: 'Recursively scan this path for indicators and evaluate all discovered items.'
+    required: false
+  sarif-file:
+    description: 'Path to write SARIF output. Include this in upload-sarif/code scanning workflow steps.'
+    required: false
+  output-file:
+    description: 'Path to write raw JSON output.'
     required: false
 
 runs:
@@ -23,8 +32,14 @@ runs:
     GITHUB_STEP_SUMMARY: ${{ env.GITHUB_STEP_SUMMARY }}
     GITHUB_WORKSPACE: ${{ env.GITHUB_WORKSPACE }}
   args:
-    - ${{ inputs.target }}
+    - ${{ inputs.target || '' }}
     - --source
     - ${{ inputs.source }}
     - ${{ inputs.api-key && '--api-key' }}
     - ${{ inputs.api-key || '' }}
+    - ${{ inputs.scan-path && '--scan-path' }}
+    - ${{ inputs.scan-path || '' }}
+    - ${{ inputs.sarif-file && '--sarif-file' }}
+    - ${{ inputs.sarif-file || '' }}
+    - ${{ inputs.output-file && '--output-file' }}
+    - ${{ inputs.output-file || '' }}
