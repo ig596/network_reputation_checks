@@ -109,3 +109,26 @@ def test_cli_missing_target() -> None:
     result = runner.invoke(cli, ["--source", "virustotal"])
     assert "Error: Missing argument 'TARGET'" in result.output
     assert result.exit_code != 0
+
+
+@patch("network_reputation_check.main.write_check_annotations")
+@patch("network_reputation_check.main.write_summary")
+@patch("network_reputation_check.checks.virus_total.VirusTotalCheck.run")
+def test_cli_writes_github_summary_when_running_in_actions(
+    mock_virustotal_run: MagicMock,
+    mock_write_summary: MagicMock,
+    mock_write_annotations: MagicMock,
+) -> None:
+    """Ensure GitHub summary + annotations are written in Actions environments."""
+    mock_virustotal_run.return_value = {"stats": {"malicious": 0, "suspicious": 0}, "detections": []}
+
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        env = {"GITHUB_ACTIONS": "true", "GITHUB_STEP_SUMMARY": "summary.md"}
+        result = runner.invoke(
+            cli, ["example.com", "--source", "virustotal", "--api-key", "FAKE_VT_KEY"], env=env,
+        )
+
+    assert result.exit_code == 0
+    mock_write_summary.assert_called_once()
+    mock_write_annotations.assert_called_once()
