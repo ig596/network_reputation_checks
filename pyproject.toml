@@ -7,13 +7,13 @@ authors = [
 ]
 packages = [{ include = "network_reputation_check" }]
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 
 
 dependencies = [
     "click (>=8.2.0,<9.0.0)",
     "validators (>=0.35.0,<0.36.0)",
-    "requests (>=2.32.3,<3.0.0)",
+    "requests (>=2.33.0,<3.0.0)",
     "vt-py (>=0.20.0,<0.21.0)",
     "tabulate (>=0.9.0,<0.10.0)",
 
@@ -43,12 +43,12 @@ addopts = "--cov=network_reputation_check --cov-report=term-missing --cov-branch
 testpaths = ["tests"]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.5"
+pytest = "^9.0.3"
 ruff = "^0.11.9"
 pre-commit = "^4.2.0"
 pytest-cov = "^6.1.1"
 commitizen = "^3.5.0"
-genbadge = { extras = ["all"], version = "^1.1.0" }
+genbadge = { extras = ["coverage"], version = "^1.1.0" }
 
 [tool.commitizen]
 version_provider = "pep621"  # Ensure compatibility with PEP 621 versioning

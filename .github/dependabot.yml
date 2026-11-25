@@ -1,26 +1,53 @@
 version: 2
 updates:
-  - package-ecosystem: "pip"
-    directory: "/"
+  - package-ecosystem: pip
+    directory: /
     schedule:
-      interval: "weekly"
-    groups:
-      python-dependencies:
-        patterns:
-          - "*"
+      interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
-      prefix: "chore(deps)"
-      include: "scope"
-      scope: "pip"
-  - package-ecosystem: "github-actions"
-    directory: "/"
+      prefix: chore
+      include: scope
+    groups:
+      python-runtime:
+        dependency-type: production
+        update-types: [minor, patch]
+      python-development:
+        dependency-type: development
+        update-types: [minor, patch]
+      python-runtime-security:
+        applies-to: security-updates
+        dependency-type: production
+      python-development-security:
+        applies-to: security-updates
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
+    commit-message:
+      prefix: chore(deps)
     groups:
       github-actions:
-        patterns:
-          - "*"
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
     commit-message:
-      prefix: "chore(deps)"
-      include: "scope"
-      scope: "github-actions"
+      prefix: chore(deps)
+
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      pre-commit-hooks:
+        patterns: ["*"]
+        update-types: [minor, patch]
