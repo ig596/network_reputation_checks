@@ -43,7 +43,7 @@ addopts = "--cov=network_reputation_check --cov-report=term-missing --cov-branch
 testpaths = ["tests"]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.5"
+pytest = "^9.0.3"
 ruff = "^0.11.9"
 pre-commit = "^4.2.0"
 pytest-cov = "^6.1.1"
