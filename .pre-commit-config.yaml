@@ -37,7 +37,6 @@ repos:
     rev: v2.7.1
     hooks:
       - id: osv-scanner
-        args: ["-r", "."]
         stages: [pre-push]
 
 
