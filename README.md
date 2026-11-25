@@ -24,6 +24,8 @@ A GitHub Action and CLI tool to check the reputation of IPs, domains, or CIDR bl
 
 ## 🔧 Usage (CLI)
 
+Local installs require Python 3.11 or newer.
+
 ```bash
 poetry run reputation-check <target> --source <source> [--api-key YOUR_KEY] [--output-file output.json]
 ```
