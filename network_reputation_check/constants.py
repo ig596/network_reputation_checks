@@ -7,7 +7,8 @@ from enum import Enum
 # ------------------------------------------------------------------------------
 
 
-class Source(str, Enum):
+# Preserve the enum's qualified string representation.
+class Source(str, Enum):  # noqa: UP042
     """Supported reputation check sources."""
 
     VIRUSTOTAL = "virustotal"

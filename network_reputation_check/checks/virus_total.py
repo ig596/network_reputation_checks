@@ -54,7 +54,8 @@ class VirusTotalCheck(ReputationCheck):
             client_factory: A callable to create a VirusTotal client.
 
         """
-        self._client_factory = client_factory or (lambda key: vt.Client(key))
+        # Resolve vt.Client when the check runs.
+        self._client_factory = client_factory or (lambda key: vt.Client(key))  # noqa: PLW0108
 
     def name(self) -> str:
         """Return the name of the source."""
