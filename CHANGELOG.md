@@ -2,6 +2,41 @@
 
 <!-- version list -->
 
+## v1.0.0 (2026-11-25)
+
+### Bug Fixes
+
+- **ci**: Verify dependency updates without rewriting PR branches
+  ([#24](https://github.com/ig596/network_reputation_checks/pull/24),
+  [`e927f60`](https://github.com/ig596/network_reputation_checks/commit/e927f607519b84d2f4169fa52924c7e86e2636b8))
+
+### Chores
+
+- Apply pre-commit fixes [ci skip]
+  ([#13](https://github.com/ig596/network_reputation_checks/pull/13),
+  [`623eb99`](https://github.com/ig596/network_reputation_checks/commit/623eb99088105bcadcd44b340e5a38c0769b2785))
+
+- **deps**: Group Dependabot updates and patch vulnerable dependencies
+  ([#24](https://github.com/ig596/network_reputation_checks/pull/24),
+  [`e927f60`](https://github.com/ig596/network_reputation_checks/commit/e927f607519b84d2f4169fa52924c7e86e2636b8))
+
+- **deps**: Group Dependabot updates by environment
+  ([#24](https://github.com/ig596/network_reputation_checks/pull/24),
+  [`e927f60`](https://github.com/ig596/network_reputation_checks/commit/e927f607519b84d2f4169fa52924c7e86e2636b8))
+
+- **deps**: Improve Dependabot grouping and patch dependencies
+  ([#24](https://github.com/ig596/network_reputation_checks/pull/24),
+  [`e927f60`](https://github.com/ig596/network_reputation_checks/commit/e927f607519b84d2f4169fa52924c7e86e2636b8))
+
+- **deps-dev**: Bump pillow from 11.3.0 to 12.1.1
+  ([#13](https://github.com/ig596/network_reputation_checks/pull/13),
+  [`623eb99`](https://github.com/ig596/network_reputation_checks/commit/623eb99088105bcadcd44b340e5a38c0769b2785))
+
+- **deps-dev**: Bump virtualenv from 20.32.0 to 20.36.1
+  ([#12](https://github.com/ig596/network_reputation_checks/pull/12),
+  [`105f070`](https://github.com/ig596/network_reputation_checks/commit/105f070a745a2044d9a2c35b15a6fd723a6cd2aa))
+
+
 ## v0.2.3 (2025-08-21)
 
 ### Bug Fixes
