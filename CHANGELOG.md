@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v1.0.1 (2026-11-25)
+
+### Bug Fixes
+
+- **ci**: Use the updated OSV Scanner hook defaults
+  ([#27](https://github.com/ig596/network_reputation_checks/pull/27),
+  [`20374b3`](https://github.com/ig596/network_reputation_checks/commit/20374b3c0addde65ca596af9e4c2f54940ae9715))
+
+### Chores
+
+- **deps**: Consolidate Dependabot updates and fix Ruff lint
+  ([#27](https://github.com/ig596/network_reputation_checks/pull/27),
+  [`20374b3`](https://github.com/ig596/network_reputation_checks/commit/20374b3c0addde65ca596af9e4c2f54940ae9715))
+
+
 ## v1.0.0 (2026-11-25)
 
 ### Bug Fixes
