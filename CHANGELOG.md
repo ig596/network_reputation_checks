@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-11-26)
+
+### Features
+
+- Attest release artifacts and publish source and Docker SBOMs
+  ([#28](https://github.com/ig596/network_reputation_checks/pull/28),
+  [`a4c36ea`](https://github.com/ig596/network_reputation_checks/commit/a4c36ea29555188a690626bc1710aba23aa73956))
+
+
 ## v1.1.0 (2026-11-26)
 
 ### Features
