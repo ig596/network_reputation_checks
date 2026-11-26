@@ -15,7 +15,7 @@ from typing import Any
 import click
 
 from network_reputation_check.checks import get_all_checks
-from network_reputation_check.gh_summary import write_summary
+from network_reputation_check.gh_summary import write_check_annotations, write_summary
 from network_reputation_check.renderers import render_markdown, render_terminal
 
 
@@ -97,8 +97,10 @@ def cli(target: str, source: str, api_key: str | None, output_file: Path | None)
         with Path(output_file).open("w", encoding="utf-8") as fp:
             json.dump(result, fp, indent=2)
 
-    if in_github_actions() and os.getenv("GITHUB_STEP_SUMMARY"):
-        write_summary(render_markdown(result, source))
+    if in_github_actions():
+        if os.getenv("GITHUB_STEP_SUMMARY"):
+            write_summary(render_markdown(result, source))
+        write_check_annotations(result, source, target)
 
     stats: dict[str, int] = result.get("stats", {})
     malicious: int = int(stats.get("malicious", 0))
