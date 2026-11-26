@@ -5,6 +5,9 @@
 ![Python](https://img.shields.io/badge/python-%3E%3D3.11-blue)
 [![Coverage](https://raw.githubusercontent.com/ig596/network_reputation_checks/main/coverage.svg)](https://github.com/ig596/network_reputation_checks/blob/main/coverage.svg)
 [![License](https://img.shields.io/github/license/ig596/network_reputation_checks)](LICENSE)
+[![Poetry](https://img.shields.io/badge/managed%20with-Poetry-blue)](https://python-poetry.org/)
+[![Ruff](https://img.shields.io/badge/code%20style-Ruff-blue)](https://docs.astral.sh/ruff/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 Network Reputation Check is a Docker-based GitHub Action and Python CLI for
 looking up an IP address or domain with VirusTotal or urlscan.io. Each run
