@@ -2,6 +2,41 @@
 
 <!-- version list -->
 
+## v1.2.1 (2026-11-26)
+
+### Bug Fixes
+
+- **ci**: Allow OSV reusable workflow permissions
+  ([#30](https://github.com/ig596/network_reputation_checks/pull/30),
+  [`183e618`](https://github.com/ig596/network_reputation_checks/commit/183e6183f363ed5d4f46ddf900a3dfdad82f7217))
+
+### Continuous Integration
+
+- Add pull request security scans
+  ([#30](https://github.com/ig596/network_reputation_checks/pull/30),
+  [`183e618`](https://github.com/ig596/network_reputation_checks/commit/183e6183f363ed5d4f46ddf900a3dfdad82f7217))
+
+- Remove duplicate security checks
+  ([#30](https://github.com/ig596/network_reputation_checks/pull/30),
+  [`183e618`](https://github.com/ig596/network_reputation_checks/commit/183e6183f363ed5d4f46ddf900a3dfdad82f7217))
+
+### Documentation
+
+- Fix README badges and action reference
+  ([#29](https://github.com/ig596/network_reputation_checks/pull/29),
+  [`99bf6cd`](https://github.com/ig596/network_reputation_checks/commit/99bf6cdbc87f0b96158815a5e046f74801fe039f))
+
+- Refresh README and fix badges ([#29](https://github.com/ig596/network_reputation_checks/pull/29),
+  [`99bf6cd`](https://github.com/ig596/network_reputation_checks/commit/99bf6cdbc87f0b96158815a5e046f74801fe039f))
+
+- Refresh README for current behavior
+  ([#29](https://github.com/ig596/network_reputation_checks/pull/29),
+  [`99bf6cd`](https://github.com/ig596/network_reputation_checks/commit/99bf6cdbc87f0b96158815a5e046f74801fe039f))
+
+- Restore tooling badges ([#29](https://github.com/ig596/network_reputation_checks/pull/29),
+  [`99bf6cd`](https://github.com/ig596/network_reputation_checks/commit/99bf6cdbc87f0b96158815a5e046f74801fe039f))
+
+
 ## v1.2.0 (2026-11-26)
 
 ### Features
