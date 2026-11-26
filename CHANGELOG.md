@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.1.0 (2026-11-26)
+
+### Features
+
+- Improve reputation reports and GitHub annotations
+  ([#16](https://github.com/ig596/network_reputation_checks/pull/16),
+  [`778d6f9`](https://github.com/ig596/network_reputation_checks/commit/778d6f92ebb16da270d29cf76100ec5602fb8b3f))
+
+
 ## v1.0.1 (2026-11-25)
 
 ### Bug Fixes
