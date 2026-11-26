@@ -1,0 +1,146 @@
+name: Security
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  betterleaks:
+    name: Betterleaks
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    env:
+      BETTERLEAKS_VERSION: 1.10.0
+      BETTERLEAKS_SHA256: 9d9ad503cd5d80d18a939352266c3fcca52f10da9b83cd5cfe646989b13940fe
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install Betterleaks
+        run: |
+          archive="${RUNNER_TEMP}/betterleaks.tar.gz"
+          install_dir="${RUNNER_TEMP}/betterleaks"
+          curl --fail --location --show-error --silent \
+            "https://github.com/betterleaks/betterleaks/releases/download/v${BETTERLEAKS_VERSION}/betterleaks_${BETTERLEAKS_VERSION}_linux_x64.tar.gz" \
+            --output "${archive}"
+          echo "${BETTERLEAKS_SHA256}  ${archive}" | sha256sum --check --strict
+          mkdir -p "${install_dir}"
+          tar -xzf "${archive}" -C "${install_dir}" betterleaks
+          echo "${install_dir}" >> "${GITHUB_PATH}"
+
+      - name: Scan pull request commits
+        id: betterleaks-scan
+        continue-on-error: true
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          betterleaks git . \
+            --log-opts="${BASE_SHA}..${HEAD_SHA}" \
+            --platform github \
+            --redact \
+            --report-format sarif \
+            --report-path betterleaks.sarif
+
+      - name: Upload Betterleaks results
+        if: ${{ !cancelled() && hashFiles('betterleaks.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: betterleaks
+          sarif_file: betterleaks.sarif
+
+      - name: Enforce Betterleaks result
+        if: steps.betterleaks-scan.outcome == 'failure'
+        run: |
+          echo "::error::Betterleaks found a secret or could not complete the scan."
+          exit 1
+
+  codeql:
+    name: CodeQL (Python)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: python
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: /language:python
+
+  opengrep:
+    name: OpenGrep
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    env:
+      OPENGREP_VERSION: 2.0.0
+      OPENGREP_SHA256: 37e93f4da5fd04a18c5c1febbdd12f7e98dfccd4d0c9cf2593bcb25eeb462da0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install OpenGrep
+        run: |
+          binary="${RUNNER_TEMP}/opengrep"
+          curl --fail --location --show-error --silent \
+            "https://github.com/opengrep/opengrep/releases/download/v${OPENGREP_VERSION}/opengrep_linux_x86" \
+            --output "${binary}"
+          echo "${OPENGREP_SHA256}  ${binary}" | sha256sum --check --strict
+          chmod +x "${binary}"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+      - name: Scan changed code
+        id: opengrep-scan
+        continue-on-error: true
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          opengrep scan \
+            --baseline-commit "${BASE_SHA}" \
+            --config p/security-audit \
+            --error \
+            --sarif-output opengrep.sarif \
+            .
+
+      - name: Upload OpenGrep results
+        if: ${{ !cancelled() && hashFiles('opengrep.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: opengrep
+          sarif_file: opengrep.sarif
+
+      - name: Enforce OpenGrep result
+        if: steps.opengrep-scan.outcome == 'failure'
+        run: |
+          echo "::error::OpenGrep found a blocking result or could not complete the scan."
+          exit 1
+
+  osv-scanner:
+    name: OSV-Scanner
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
