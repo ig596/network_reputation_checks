@@ -8,10 +8,13 @@ RUN adduser --disabled-password --gecos "" appuser \
 USER appuser
 
 # Add .local/bin to PATH for poetry
+ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 ENV PATH="/home/appuser/.local/bin:$PATH"
 
 # Install poetry and dependencies as non-root user
 RUN pip install --no-cache-dir poetry \
     && poetry install --without dev
 
-ENTRYPOINT ["poetry", "run", "reputation-check"]
+# GitHub mounts the runner workspace over WORKDIR and requires root for writes.
+USER root
+ENTRYPOINT ["/app/.venv/bin/python", "-m", "network_reputation_check.action_entrypoint"]

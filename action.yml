@@ -7,24 +7,36 @@ branding:
 
 inputs:
   target:
-    description: 'Target IP, domain, or CIDR to check.'
-    required: true
+    description: 'Target IP, domain, or CIDR to check (optional when scan-path is provided).'
+    required: false
   source:
     description: 'Source to use for reputation check (virustotal, urlscan).'
     required: true
   api-key:
     description: 'API key for the selected source (if required).'
     required: false
+  scan-path:
+    description: 'Recursively scan this path for indicators and evaluate all discovered items.'
+    required: false
+  max-indicators:
+    description: 'Maximum unique indicators before refusing a repository scan.'
+    required: false
+    default: '100'
+  sarif-file:
+    description: 'Path to write SARIF output. Include this in upload-sarif/code scanning workflow steps.'
+    required: false
+  output-file:
+    description: 'Path to write raw JSON output.'
+    required: false
 
 runs:
   using: 'docker'
   image: 'Dockerfile'
   env:
-    GITHUB_STEP_SUMMARY: ${{ env.GITHUB_STEP_SUMMARY }}
-    GITHUB_WORKSPACE: ${{ env.GITHUB_WORKSPACE }}
-  args:
-    - ${{ inputs.target }}
-    - --source
-    - ${{ inputs.source }}
-    - ${{ inputs.api-key && '--api-key' }}
-    - ${{ inputs.api-key || '' }}
+    NRC_TARGET: ${{ inputs.target }}
+    NRC_SOURCE: ${{ inputs.source }}
+    NRC_API_KEY: ${{ inputs.api-key }}
+    NRC_SCAN_PATH: ${{ inputs.scan-path }}
+    NRC_SARIF_FILE: ${{ inputs.sarif-file }}
+    NRC_OUTPUT_FILE: ${{ inputs.output-file }}
+    NRC_MAX_INDICATORS: ${{ inputs.max-indicators }}
