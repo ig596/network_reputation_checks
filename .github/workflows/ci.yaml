@@ -85,3 +85,21 @@ jobs:
           DOCKER_BUILD_SUMMARY: true
         with:
           call: check
+      - name: Build action for smoke test
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: network-reputation-check:smoke
+      - name: Smoke test Docker action inputs and workspace outputs
+        run: |
+          fixture_dir="$(mktemp -d)"
+          mkdir "$fixture_dir/empty"
+          docker run --rm --workdir /github/workspace \
+            --mount "type=bind,source=$fixture_dir,target=/github/workspace" \
+            --env NRC_SOURCE=virustotal --env NRC_API_KEY=unused \
+            --env NRC_SCAN_PATH=empty --env NRC_SARIF_FILE=results.sarif \
+            --env NRC_OUTPUT_FILE=results.json \
+            network-reputation-check:smoke
+          test -s "$fixture_dir/results.sarif"
+          test "$(cat "$fixture_dir/results.json")" = '[]'

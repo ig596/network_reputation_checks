@@ -78,3 +78,59 @@ pre-commit run --all-files
 
 ## 📜 License
 This project is licensed under the [MIT License](LICENSE).
+
+## Repository scanning and SARIF
+
+Scan a directory with the CLI:
+
+```bash
+poetry run reputation-check --source virustotal --api-key "$VT_API_KEY" \
+  --scan-path . --output-file results.json --sarif-file results.sarif
+```
+
+Use either a target or `--scan-path`. SARIF output requires scan mode. Both
+providers require an API key in this implementation. Public IPs (IPv4 and IPv6),
+domains and CIDRs are discovered and deduplicated, with source file/line locations.
+Private/reserved addresses, local/example domains (including their subdomains),
+symlinks, binary files, files larger than 1 MB and common build directories are
+excluded. Specified JSON/SARIF outputs are excluded from discovery on subsequent
+runs. Discovery uses text patterns and may include dotted identifiers; review the
+scan directory before sending discovered values to a third-party provider.
+
+VirusTotal supports individual IPs and domains; urlscan supports domains. Neither
+provider here supports CIDR lookups. Unsupported indicator types and lookup errors
+are recorded in JSON/SARIF and fail the scan, as do malicious or suspicious
+VirusTotal results. CIDRs are not expanded into potentially huge sets of requests.
+urlscan search matches alone do not establish that an indicator is malicious.
+Scans with no indicators succeed and write empty reports.
+
+A scan refuses more than 100 unique indicators before any requests. Use
+`--max-indicators` (or the action's `max-indicators` input) to adjust this cap.
+Providers may also enforce rate limits; those lookup errors fail the scan.
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+steps:
+  - uses: actions/checkout@v7
+  - name: Scan repository
+    uses: ig596/network_reputation_checks@main
+    with:
+      source: virustotal
+      api-key: ${{ secrets.VT_API_KEY }}
+      scan-path: .
+      sarif-file: results.sarif
+      output-file: results.json
+  - name: Upload findings even when the scan fails
+    if: ${{ !cancelled() && hashFiles('results.sarif') != '' }}
+    uses: github/codeql-action/upload-sarif@v4
+    with:
+      sarif_file: results.sarif
+```
+
+The action accepts optional `scan-path`, `sarif-file`, `output-file` and
+`max-indicators` inputs. Empty optional inputs are omitted from the command.
+Single-target runs still work without these inputs. GitHub Code Scanning must be
+available for the repository before uploading SARIF. When scanning a subdirectory,
+run from the repository root so SARIF locations resolve to checked-out files.
