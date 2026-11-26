@@ -1,15 +1,14 @@
 # Network Reputation Check Action
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ig596/network-reputation-check-action/ci.yml?branch=main)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ig596/network_reputation_checks/ci.yaml)
 ![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
 ![License](https://img.shields.io/github/license/ig596/network_reputation_checks)
 ![Poetry](https://img.shields.io/badge/managed%20with-poetry-blue)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
-![Coverage](./coverage.svg)
+![Coverage](https://raw.githubusercontent.com/ig596/network_reputation_checks/main/coverage.svg)
 ![Code Style](https://img.shields.io/badge/code%20style-ruff-blue)
-![PyPI Version](https://img.shields.io/pypi/v/network_reputation_checks)
-![Downloads](https://img.shields.io/pypi/dm/network-reputation-check)
+![GitHub Release](https://img.shields.io/github/v/release/ig596/network_reputation_checks)
 ![GitHub Stars](https://img.shields.io/github/stars/ig596/network_reputation_checks?style=social)
 ![GitHub Issues](https://img.shields.io/github/issues/ig596/network_reputation_checks)
 ![Last Commit](https://img.shields.io/github/last-commit/ig596/network_reputation_checks)
@@ -40,7 +39,7 @@ poetry run reputation-check <target> --source <source> [--api-key YOUR_KEY] [--o
 
 ```yaml
 - name: Run Network Reputation Check
-  uses: ig596/network-reputation-check-action@main
+  uses: ig596/network_reputation_checks@main
   with:
     target: "example.com"
     source: "virustotal"
