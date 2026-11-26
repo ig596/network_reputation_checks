@@ -73,6 +73,44 @@ Each invocation uses one source. To query both providers, run separate jobs with
 The release workflow uses Conventional Commits and `python-semantic-release` to
 update the project version. Routine PRs should not manually bump `pyproject.toml`.
 
+### Release provenance and SBOMs
+
+New releases publish GitHub build provenance attestations for the Python wheel,
+source distribution, and Docker archive. Attestations use GitHub Actions OIDC
+and Sigstore; no separate signing key is required. This is the starting point
+for SLSA Build Level 2, without a claim of Level 3 build isolation.
+
+Each release also includes `sbom.spdx.json` (the source repository's dependency
+inventory) and `sbom.docker.spdx.json` (packages discovered in the actual Docker
+image, including OS and installed Python packages). The Docker SBOM has a signed
+SBOM attestation bound to the downloaded Docker archive's digest. The source SBOM
+is a repository inventory, not an inventory of a resolved Python installation.
+Existing releases are not retroactively attested.
+
+Download an artifact from a new release and verify its provenance with a recent
+GitHub CLI:
+
+```bash
+gh attestation verify ./network_reputation_check-VERSION-py3-none-any.whl \
+  --repo ig596/network_reputation_checks \
+  --signer-workflow ig596/network_reputation_checks/.github/workflows/release.yaml
+```
+
+Replace `VERSION` with the release version. The same command accepts the Python
+source distribution or Docker archive path. Verify the Docker SBOM attestation
+against the archive using:
+
+```bash
+gh attestation verify ./network-reputation-check-docker-VERSION.tar.gz \
+  --repo ig596/network_reputation_checks \
+  --signer-workflow ig596/network_reputation_checks/.github/workflows/release.yaml \
+  --predicate-type https://spdx.dev/Document/v2.3
+```
+
+Attestations identify the workflow and artifact digest; they do not certify the
+absence of vulnerabilities. The GitHub Action builds `Dockerfile` at runtime,
+so verifying a release archive does not verify a separate Actions runtime build.
+
 ## 🔧 Development Setup
 
 ### Pre-commit Hooks
