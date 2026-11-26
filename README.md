@@ -1,94 +1,91 @@
-# Network Reputation Check Action
+# Network Reputation Check
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ig596/network-reputation-check-action/ci.yml?branch=main)
-![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
-![License](https://img.shields.io/github/license/ig596/network_reputation_checks)
-![Poetry](https://img.shields.io/badge/managed%20with-poetry-blue)
+[![CI](https://img.shields.io/github/actions/workflow/status/ig596/network_reputation_checks/ci.yaml)](https://github.com/ig596/network_reputation_checks/actions/workflows/ci.yaml)
+[![Release](https://img.shields.io/github/v/release/ig596/network_reputation_checks)](https://github.com/ig596/network_reputation_checks/releases/latest)
+![Python](https://img.shields.io/badge/python-%3E%3D3.11-blue)
+[![Coverage](https://raw.githubusercontent.com/ig596/network_reputation_checks/main/coverage.svg)](https://github.com/ig596/network_reputation_checks/blob/main/coverage.svg)
+[![License](https://img.shields.io/github/license/ig596/network_reputation_checks)](LICENSE)
+[![Poetry](https://img.shields.io/badge/managed%20with-Poetry-blue)](https://python-poetry.org/)
+[![Ruff](https://img.shields.io/badge/code%20style-Ruff-blue)](https://docs.astral.sh/ruff/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
-![Coverage](./coverage.svg)
-![Code Style](https://img.shields.io/badge/code%20style-ruff-blue)
-![PyPI Version](https://img.shields.io/pypi/v/network_reputation_checks)
-![Downloads](https://img.shields.io/pypi/dm/network-reputation-check)
-![GitHub Stars](https://img.shields.io/github/stars/ig596/network_reputation_checks?style=social)
-![GitHub Issues](https://img.shields.io/github/issues/ig596/network_reputation_checks)
-![Last Commit](https://img.shields.io/github/last-commit/ig596/network_reputation_checks)
+Network Reputation Check is a Docker-based GitHub Action and Python CLI for
+looking up an IP address or domain with VirusTotal or urlscan.io. Each run
+queries one provider and prints a human-readable report. In GitHub Actions, it
+also writes the report to the job summary.
 
-A GitHub Action and CLI tool to check the reputation of IPs, domains, or CIDR blocks using threat intelligence sources like VirusTotal and urlscan.io.
-
-## ✅ Features
-- Click-powered CLI
-- Supports one source per run
-- Works as a Docker-based GitHub Action
-- Clean, pluggable design with tests
-
-## 🔧 Usage (CLI)
-
-Local installs require Python 3.11 or newer.
-
-```bash
-poetry run reputation-check <target> --source <source> [--api-key YOUR_KEY] [--output-file output.json]
-```
-
-### CLI Parameters
-- `target` (required): The IP, domain, or CIDR block to check.
-- `--source` (required): The source to use for the reputation check (e.g., `virustotal`, `urlscan`).
-- `--api-key` (optional): The API key for the selected source. Can also be set via environment variables (`VT_API_KEY` for VirusTotal, `URLSCAN_API_KEY` for urlscan.io).
-- `--output-file` (optional): Path to save the raw JSON result.
-
-## 🚀 Usage (GitHub Actions)
+## GitHub Actions
 
 ```yaml
-- name: Run Network Reputation Check
-  uses: ig596/network-reputation-check-action@main
+- name: Check domain reputation
+  uses: ig596/network_reputation_checks@v1
   with:
-    target: "example.com"
-    source: "virustotal"
-    api-key: "${{ secrets.VT_API_KEY }}"
+    target: example.com
+    source: virustotal
+    api-key: ${{ secrets.VT_API_KEY }}
 ```
 
-### GitHub Action Parameters
-- `target` (required): The IP, domain, or CIDR block to check.
-- `source` (required): The source to use for the reputation check (e.g., `virustotal`, `urlscan`).
-- `api-key` (optional): The API key for the selected source. Can be passed via GitHub Secrets.
+Use a separate step for each provider when both results are needed.
 
-## 📦 Supported Sources
-- VirusTotal
-- urlscan.io
+### Inputs
 
-## 🔑 API Keys
-- VirusTotal: `VT_API_KEY` (required)
-- urlscan.io: `URLSCAN_API_KEY` (optional for most API calls)
+| Input | Required | Description |
+| --- | --- | --- |
+| `target` | Yes | IP address or domain to check. urlscan.io accepts domains only. |
+| `source` | Yes | `virustotal` or `urlscan`. |
+| `api-key` | Yes in practice | Provider API key. Both current provider implementations reject a missing key. |
 
-## Reports and releases
+CIDR ranges are not currently supported.
 
-Terminal reports and GitHub Actions job summaries include VirusTotal analysis
-statistics and malicious engine detections, or the first five urlscan matches.
-GitHub Actions also receives a notice or error annotation for each completed check.
-A malicious or suspicious VirusTotal result fails the command.
+## CLI
 
-Each invocation uses one source. To query both providers, run separate jobs with a
-`source: [virustotal, urlscan]` matrix and the appropriate API key for each job.
+The project requires Python 3.11 or newer and uses Poetry for local installs.
+It is not currently published to the production Python Package Index.
 
-The release workflow uses Conventional Commits and `python-semantic-release` to
-update the project version. Routine PRs should not manually bump `pyproject.toml`.
+```bash
+git clone https://github.com/ig596/network_reputation_checks.git
+cd network_reputation_checks
+poetry install
 
-### Release provenance and SBOMs
+poetry run reputation-check example.com \
+  --source virustotal \
+  --api-key "$VT_API_KEY" \
+  --output-file result.json
+```
 
-New releases publish GitHub build provenance attestations for the Python wheel,
-source distribution, and Docker archive. Attestations use GitHub Actions OIDC
-and Sigstore; no separate signing key is required. This is the starting point
-for SLSA Build Level 2, without a claim of Level 3 build isolation.
+The CLI also accepts the provider key through the `API_KEY` environment
+variable:
 
-Each release also includes `sbom.spdx.json` (the source repository's dependency
-inventory) and `sbom.docker.spdx.json` (packages discovered in the actual Docker
-image, including OS and installed Python packages). The Docker SBOM has a signed
-SBOM attestation bound to the downloaded Docker archive's digest. The source SBOM
-is a repository inventory, not an inventory of a resolved Python installation.
-Existing releases are not retroactively attested.
+```bash
+API_KEY="$URLSCAN_API_KEY" poetry run reputation-check example.com --source urlscan
+```
 
-Download an artifact from a new release and verify its provenance with a recent
-GitHub CLI:
+Run `poetry run reputation-check --help` for the complete command reference.
+
+## Providers and results
+
+| Provider | Targets | Reported result | Exit behavior |
+| --- | --- | --- | --- |
+| VirusTotal | IP addresses and domains | Analysis statistics and malicious engine detections | Exits with status 1 when VirusTotal reports a malicious or suspicious detection. |
+| urlscan.io | Domains | Up to the first five matching scans | Exits with status 1 for request or API errors; matching scans do not currently fail the command. |
+
+When the CLI runs inside GitHub Actions, both providers write Markdown to the
+job summary. VirusTotal checks also emit a notice or error annotation.
+
+## Release artifacts
+
+Releases include a Python wheel, source distribution, Docker archive, and two
+SPDX SBOMs:
+
+- `sbom.spdx.json` inventories the source repository's dependencies.
+- `sbom.docker.spdx.json` inventories packages in the built Docker image.
+
+GitHub build-provenance attestations cover the Python distributions and Docker
+archive. The Docker SBOM also has an attestation bound to the archive digest.
+These attestations identify the build workflow and artifact digest; they do not
+certify that an artifact is free of vulnerabilities.
+
+Verify a downloaded release artifact with a recent GitHub CLI:
 
 ```bash
 gh attestation verify ./network_reputation_check-VERSION-py3-none-any.whl \
@@ -96,36 +93,20 @@ gh attestation verify ./network_reputation_check-VERSION-py3-none-any.whl \
   --signer-workflow ig596/network_reputation_checks/.github/workflows/release.yaml
 ```
 
-Replace `VERSION` with the release version. The same command accepts the Python
-source distribution or Docker archive path. Verify the Docker SBOM attestation
-against the archive using:
+Replace `VERSION` with the release version. The same command accepts the source
+distribution or Docker archive. Releases use Conventional Commits and
+`python-semantic-release`; routine pull requests should not edit the version in
+`pyproject.toml` manually.
+
+## Development
 
 ```bash
-gh attestation verify ./network-reputation-check-docker-VERSION.tar.gz \
-  --repo ig596/network_reputation_checks \
-  --signer-workflow ig596/network_reputation_checks/.github/workflows/release.yaml \
-  --predicate-type https://spdx.dev/Document/v2.3
+poetry install --with dev
+poetry run pre-commit install
+poetry run pre-commit run --all-files
+poetry run pytest
 ```
 
-Attestations identify the workflow and artifact digest; they do not certify the
-absence of vulnerabilities. The GitHub Action builds `Dockerfile` at runtime,
-so verifying a release archive does not verify a separate Actions runtime build.
+## License
 
-## 🔧 Development Setup
-
-### Pre-commit Hooks
-
-This project uses pre-commit hooks to enforce code quality. Install and activate them with:
-
-```bash
-pip install pre-commit
-pre-commit install
-```
-
-You can manually run the hooks on all files with:
-```bash
-pre-commit run --all-files
-```
-
-## 📜 License
-This project is licensed under the [MIT License](LICENSE).
+Licensed under the [MIT License](LICENSE).
