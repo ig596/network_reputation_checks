@@ -60,6 +60,19 @@ poetry run reputation-check <target> --source <source> [--api-key YOUR_KEY] [--o
 - VirusTotal: `VT_API_KEY` (required)
 - urlscan.io: `URLSCAN_API_KEY` (optional for most API calls)
 
+## Reports and releases
+
+Terminal reports and GitHub Actions job summaries include VirusTotal analysis
+statistics and malicious engine detections, or the first five urlscan matches.
+GitHub Actions also receives a notice or error annotation for each completed check.
+A malicious or suspicious VirusTotal result fails the command.
+
+Each invocation uses one source. To query both providers, run separate jobs with a
+`source: [virustotal, urlscan]` matrix and the appropriate API key for each job.
+
+The release workflow uses Conventional Commits and `python-semantic-release` to
+update the project version. Routine PRs should not manually bump `pyproject.toml`.
+
 ## 🔧 Development Setup
 
 ### Pre-commit Hooks
