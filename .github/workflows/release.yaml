@@ -20,6 +20,8 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      id-token: write
+      attestations: write
 
     outputs:
       released: ${{ steps.release.outputs.released }}
@@ -50,6 +52,14 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           git_committer_name: "github-actions[bot]"
           git_committer_email: "github-actions[bot]@users.noreply.github.com"
+
+      - name: Attest Python distribution provenance
+        if: steps.release.outputs.released == 'true'
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/*.whl
+            dist/*.tar.gz
 
       - name: Publish | Upload to GitHub Release Assets
         uses: python-semantic-release/publish-action@v10.7.0
@@ -90,8 +100,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: read
-      security-events: write
 
     steps:
       - uses: actions/checkout@v7
@@ -114,10 +122,19 @@ jobs:
         with:
           path: .
           artifact-name: sbom.spdx.json
+          output-file: sbom.spdx.json
           format: spdx-json
           dependency-snapshot: false
-          upload-release-assets: true
+          upload-release-assets: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # This workflow runs on main, so Anchore cannot infer the release tag.
+      - name: Upload source SBOM to GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.release.outputs.tag }}
+          files: sbom.spdx.json
+          fail_on_unmatched_files: true
 
   docker-artifacts:
     needs: release
@@ -125,6 +142,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
 
     steps:
       - uses: actions/checkout@v7
@@ -159,10 +178,33 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=docker,dest=network-reputation-check-docker-${{ needs.release.outputs.version }}.tar.gz,compression=gzip
 
+      - name: Generate Docker image SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: docker-archive:network-reputation-check-docker-${{ needs.release.outputs.version }}.tar.gz
+          artifact-name: sbom.docker.spdx.json
+          output-file: sbom.docker.spdx.json
+          format: spdx-json
+          upload-release-assets: false
+
+      - name: Attest Docker archive provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: network-reputation-check-docker-${{ needs.release.outputs.version }}.tar.gz
+
+      - name: Attest Docker archive SBOM
+        uses: actions/attest@v4
+        with:
+          subject-path: network-reputation-check-docker-${{ needs.release.outputs.version }}.tar.gz
+          sbom-path: sbom.docker.spdx.json
+
       - name: Upload Docker tar to GitHub release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.tag }}
-          files: network-reputation-check-docker-${{ needs.release.outputs.version }}.tar.gz
+          files: |
+            network-reputation-check-docker-${{ needs.release.outputs.version }}.tar.gz
+            sbom.docker.spdx.json
+          fail_on_unmatched_files: true
           draft: false
           prerelease: false
